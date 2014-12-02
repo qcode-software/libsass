@@ -49,7 +49,7 @@ CSOURCES = cencode.c
 OBJECTS = $(SOURCES:.cpp=.o)
 COBJECTS = $(CSOURCES:.c=.o)
 
-all: build package upload clean
+all: build package clean
 
 %.o: %.c
 	g++ -Wall -fPIC -O2 -c -o $@ $<
@@ -61,8 +61,8 @@ all: build package upload clean
 	g++ -std=c++0x -Wall -fPIC -O2 -o $@ $+ -fPIC
 
 build: $(COBJECTS) $(OBJECTS)
-	mkdir -p lib
-	g++ -shared -fPIC -o lib/libsass.so $(COBJECTS) $(OBJECTS)
+	cd $(TMP_DIR) && mkdir -p lib
+	cd $(TMP_DIR) && g++ -shared -fPIC -o lib/libsass.so $(COBJECTS) $(OBJECTS)
 
 package: check-version
 	# Copy files to pristine temporary directory
@@ -74,7 +74,7 @@ package: check-version
 	fakeroot checkinstall -D --deldoc --backup=no --install=no --pkgname=$(DPKG_NAME) --pkgversion=$(VERSION) --pkgrelease=$(RELEASE) --pkglicense="PUBLIC" -A all -y --maintainer $(MAINTAINER) --reset-uids=yes --replaces none --conflicts none make install
 
 install: build
-	install -pm0755 lib/libsass.so /usr/local/lib/libsass.so
+	cd $(TMP_DIR) && install -pm0755 lib/libsass.so /usr/local/lib/libsass.so
 
 upload: check-version
 	scp $(DPKG_NAME)_$(VERSION)-$(RELEASE)_all.deb "$(REMOTE_USER)@$(REMOTE_HOST):$(REMOTE_DIR)/debs"	
@@ -82,7 +82,7 @@ upload: check-version
 	ssh $(REMOTE_USER)@$(REMOTE_HOST) reprepro -b $(REMOTE_DIR) includedeb wheezy $(REMOTE_DIR)/debs/$(DPKG_NAME)_$(VERSION)-$(RELEASE)_all.deb
 
 clean:
-	rm -f $(COBJECTS) $(OBJECTS) lib/*.a lib/*.la lib/*.so $(DPKG_NAME)*_all.deb
+	rm -f $(DPKG_NAME)*_all.deb v$(VERSION).tar.gz
 
 .PHONY: all 
 
