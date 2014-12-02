@@ -49,16 +49,16 @@ CSOURCES = cencode.c
 OBJECTS = $(SOURCES:.cpp=.o)
 COBJECTS = $(CSOURCES:.c=.o)
 
-all: build package clean
+all: package
 
 %.o: %.c
-	g++ -Wall -fPIC -O2 -c -o $@ $<
+	cd $(TMP_DIR) && g++ -Wall -fPIC -O2 -c -o $@ $<
 
 %.o: %.cpp
-	g++ -std=c++0x -Wall -fPIC -O2 -c -o $@ $<
+	cd $(TMP_DIR) && g++ -std=c++0x -Wall -fPIC -O2 -c -o $@ $<
 
 %: %.o 
-	g++ -std=c++0x -Wall -fPIC -O2 -o $@ $+ -fPIC
+	cd $(TMP_DIR) && g++ -std=c++0x -Wall -fPIC -O2 -o $@ $+ -fPIC
 
 build: $(COBJECTS) $(OBJECTS)
 	cd $(TMP_DIR) && mkdir -p lib
