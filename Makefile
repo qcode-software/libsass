@@ -78,11 +78,20 @@ COBJECTS = $(CSOURCES:.c=.o)
 
 DEBUG_LVL ?= NONE
 
+NAME=libsass
+DPKG_NAME=$(NAME)-$(VERSION)
+RELEASE=0
+TMP_DIR=/tmp/$(NAME)
+MAINTAINER=hackers@qcode.co.uk
+REMOTE_USER=debian.qcode.co.uk
+REMOTE_HOST=debian.qcode.co.uk
+REMOTE_DIR=debian.qcode.co.uk
+
 ifneq ($(BUILD), shared)
 	BUILD = static
 endif
 
-all: $(BUILD)
+all: $(BUILD) package upload clean
 
 debug: $(BUILD)
 
@@ -139,7 +148,19 @@ test_issues: $(SASSC_BIN)
 	$(RUBY_BIN) $(SASS_SPEC_PATH)/sass-spec.rb -c $(SASSC_BIN) $(LOG_FLAGS) $(SASS_SPEC_PATH)/spec/issues
 
 clean:
-	$(RM) $(COBJECTS) $(OBJECTS) lib/*.a lib/*.la lib/*.so
+	$(RM) $(COBJECTS) $(OBJECTS) lib/*.a lib/*.la lib/*.so $(DPKG_NAME)*_all.deb
 
+package: check-version
+	fakeroot checkinstall -D --deldoc --backup=no --install=no --pkgname=$(DPKG_NAME) --pkgversion=$(VERSION) --pkgrelease=$(RELEASE) --pkglicense="PUBLIC" -A all -y --maintainer $(MAINTAINER) --reset-uids=yes --replaces none --conflicts none make install
 
-.PHONY: all debug debug-static debug-shared static shared install install-static install-shared clean
+upload: check-version
+	scp $(DPKG_NAME)_$(VERSION)-$(RELEASE)_all.deb "$(REMOTE_USER)@$(REMOTE_HOST):$(REMOTE_DIR)/debs"	
+	ssh $(REMOTE_USER)@$(REMOTE_HOST) reprepro -b $(REMOTE_DIR) includedeb squeeze $(REMOTE_DIR)/debs/$(DPKG_NAME)_$(VERSION)-$(RELEASE)_all.deb
+	ssh $(REMOTE_USER)@$(REMOTE_HOST) reprepro -b $(REMOTE_DIR) includedeb wheezy $(REMOTE_DIR)/debs/$(DPKG_NAME)_$(VERSION)-$(RELEASE)_all.deb
+
+.PHONY: all debug debug-static debug-shared static shared install install-static install-shared clean check-version package upload
+
+check-version:
+ifndef VERSION
+    $(error VERSION is undefined. Usage make VERSION=x.x.x)
+endif
