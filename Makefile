@@ -1,145 +1,93 @@
-CC       ?= cc
-CXX      ?= g++
-RM       ?= rm -f
-MKDIR    ?= mkdir -p
-CFLAGS   = -Wall -fPIC -O2 $(EXTRA_CFLAGS)
-CXXFLAGS = -std=c++0x -Wall -fPIC -O2 $(EXTRA_CXXFLAGS)
-LDFLAGS  = -fPIC $(EXTRA_LDFLAGS)
-
-ifneq (,$(findstring /cygdrive/,$(PATH)))
-	UNAME := Cygwin
-else
-ifneq (,$(findstring WINDOWS,$(PATH)))
-	UNAME := Windows
-else
-	UNAME := $(shell uname -s)
-endif
-endif
-
-ifeq ($(UNAME),Darwin)
-	CFLAGS += -stdlib=libc++
-	CXXFLAGS += -stdlib=libc++
-endif
-
-ifeq (,$(PREFIX))
-	ifeq (,$(TRAVIS_BUILD_DIR))
-		PREFIX = /usr/local
-	else
-		PREFIX = $(TRAVIS_BUILD_DIR)
-	endif
-endif
-
-SASS_SASSC_PATH ?= sassc
-SASS_SPEC_PATH ?= sass-spec
-SASS_SPEC_SPEC_DIR ?= spec
-SASSC_BIN = $(SASS_SASSC_PATH)/bin/sassc
-RUBY_BIN = ruby
+NAME=libsass
+DPKG_NAME=$(NAME)-$(VERSION)
+RELEASE=0
+TMP_DIR=/tmp/$(NAME)
+BUILD_DIR=$(TMP_DIR)/lib
+MAINTAINER=hackers@qcode.co.uk
+REMOTE_USER=debian.qcode.co.uk
+REMOTE_HOST=debian.qcode.co.uk
+REMOTE_DIR=debian.qcode.co.uk
 
 SOURCES = \
-	ast.cpp \
-	base64vlq.cpp \
-	bind.cpp \
-	constants.cpp \
-	context.cpp \
-	contextualize.cpp \
-	copy_c_str.cpp \
-	error_handling.cpp \
-	eval.cpp \
-	expand.cpp \
-	extend.cpp \
-	file.cpp \
-	functions.cpp \
-	inspect.cpp \
-	node.cpp \
-	json.cpp \
-	output_compressed.cpp \
-	output_nested.cpp \
-	parser.cpp \
-	prelexer.cpp \
-	remove_placeholders.cpp \
-	sass.cpp \
-	sass_util.cpp \
-	sass_values.cpp \
-	sass_context.cpp \
-	sass_functions.cpp \
-	sass_interface.cpp \
-	sass2scss.cpp \
-	source_map.cpp \
-	to_c.cpp \
-	to_string.cpp \
-	units.cpp \
-	utf8_string.cpp \
-	util.cpp
+	$(TMP_DIR)/ast.cpp \
+	$(TMP_DIR)/base64vlq.cpp \
+	$(TMP_DIR)/bind.cpp \
+	$(TMP_DIR)/constants.cpp \
+	$(TMP_DIR)/context.cpp \
+	$(TMP_DIR)/contextualize.cpp \
+	$(TMP_DIR)/copy_c_str.cpp \
+	$(TMP_DIR)/error_handling.cpp \
+	$(TMP_DIR)/eval.cpp \
+	$(TMP_DIR)/expand.cpp \
+	$(TMP_DIR)/extend.cpp \
+	$(TMP_DIR)/file.cpp \
+	$(TMP_DIR)/functions.cpp \
+	$(TMP_DIR)/inspect.cpp \
+	$(TMP_DIR)/node.cpp \
+	$(TMP_DIR)/json.cpp \
+	$(TMP_DIR)/output_compressed.cpp \
+	$(TMP_DIR)/output_nested.cpp \
+	$(TMP_DIR)/parser.cpp \
+	$(TMP_DIR)/prelexer.cpp \
+	$(TMP_DIR)/remove_placeholders.cpp \
+	$(TMP_DIR)/sass.cpp \
+	$(TMP_DIR)/sass_util.cpp \
+	$(TMP_DIR)/sass_values.cpp \
+	$(TMP_DIR)/sass_context.cpp \
+	$(TMP_DIR)/sass_functions.cpp \
+	$(TMP_DIR)/sass_interface.cpp \
+	$(TMP_DIR)/sass2scss.cpp \
+	$(TMP_DIR)/source_map.cpp \
+	$(TMP_DIR)/to_c.cpp \
+	$(TMP_DIR)/to_string.cpp \
+	$(TMP_DIR)/units.cpp \
+	$(TMP_DIR)/utf8_string.cpp \
+	$(TMP_DIR)/util.cpp
 
-CSOURCES = cencode.c
+CSOURCES = $(TMP_DIR)/cencode.c
 
 OBJECTS = $(SOURCES:.cpp=.o)
 COBJECTS = $(CSOURCES:.c=.o)
 
-DEBUG_LVL ?= NONE
-
-ifneq ($(BUILD), shared)
-	BUILD = static
-endif
-
-all: $(BUILD)
-
-debug: $(BUILD)
-
-debug-static: LDFLAGS := -g
-debug-static: CFLAGS := -g -DDEBUG -DDEBUG_LVL="$(DEBUG_LVL)" $(filter-out -O2,$(CFLAGS))
-debug-static: CXXFLAGS := -g -DDEBUG -DDEBUG_LVL="$(DEBUG_LVL)" $(filter-out -O2,$(CXXFLAGS))
-debug-static: static
-
-debug-shared: LDFLAGS := -g
-debug-shared: CFLAGS := -g -DDEBUG -DDEBUG_LVL="$(DEBUG_LVL)" $(filter-out -O2,$(CFLAGS))
-debug-shared: CXXFLAGS := -g -DDEBUG -DDEBUG_LVL="$(DEBUG_LVL)" $(filter-out -O2,$(CXXFLAGS))
-debug-shared: shared
-
-static: lib/libsass.a
-shared: lib/libsass.so
-
-lib/libsass.a: $(COBJECTS) $(OBJECTS)
-	$(MKDIR) lib
-	$(AR) rvs $@ $(COBJECTS) $(OBJECTS)
-
-lib/libsass.so: $(COBJECTS) $(OBJECTS)
-	$(MKDIR) lib
-	$(CXX) -shared $(LDFLAGS) -o $@ $(COBJECTS) $(OBJECTS)
+all: package upload clean
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	cd $(TMP_DIR) && g++ -Wall -fPIC -O2 -c -o $@ $<
 
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
+	cd $(TMP_DIR) && g++ -std=c++0x -Wall -fPIC -O2 -c -o $@ $<
 
-%: %.o static
-	$(CXX) $(CXXFLAGS) -o $@ $+ $(LDFLAGS)
+%: %.o 
+	cd $(TMP_DIR) && g++ -std=c++0x -Wall -fPIC -O2 -o $@ $+ -fPIC
 
-install: install-$(BUILD)
+build: $(COBJECTS) $(OBJECTS)
+	cd $(TMP_DIR) && mkdir -p lib
+	cd $(TMP_DIR) && pwd
+	cd $(TMP_DIR) && g++ -shared -fPIC -o lib/libsass.so $(COBJECTS) $(OBJECTS)
 
-install-static: lib/libsass.a
-	$(MKDIR) $(DESTDIR)$(PREFIX)\/lib/
-	install -pm0755 $< $(DESTDIR)$(PREFIX)/$<
+package: check-version
+	# Copy files to pristine temporary directory
+	rm -rf $(TMP_DIR)
+	mkdir $(TMP_DIR)
+	curl --fail -K ~/.curlrc_github -L -o v$(VERSION).tar.gz https://api.github.com/repos/qcode-software/$(NAME)/tarball/v$(VERSION)
+	tar --strip-components=1 -xzvf v$(VERSION).tar.gz -C $(TMP_DIR)
 
-install-shared: lib/libsass.so
-	$(MKDIR) $(DESTDIR)$(PREFIX)\/lib/
-	install -pm0755 $< $(DESTDIR)$(PREFIX)/$<
+	fakeroot checkinstall -D --deldoc --backup=no --install=no --pkgname=$(DPKG_NAME) --pkgversion=$(VERSION) --pkgrelease=$(RELEASE) --pkglicense="PUBLIC" -A all -y --maintainer $(MAINTAINER) --reset-uids=yes --replaces none --conflicts none make install
 
-$(SASSC_BIN): $(BUILD)
-	cd $(SASS_SASSC_PATH) && $(MAKE)
+install: build
+	cd $(TMP_DIR) && install -pm0755 lib/libsass.so /usr/local/lib/libsass.so
 
-test: $(SASSC_BIN)
-	$(RUBY_BIN) $(SASS_SPEC_PATH)/sass-spec.rb -c $(SASSC_BIN) -s $(LOG_FLAGS) $(SASS_SPEC_PATH)/$(SASS_SPEC_SPEC_DIR)
-
-test_build: $(SASSC_BIN)
-	$(RUBY_BIN) $(SASS_SPEC_PATH)/sass-spec.rb -c $(SASSC_BIN) -s --ignore-todo $(LOG_FLAGS) $(SASS_SPEC_PATH)/$(SASS_SPEC_SPEC_DIR)
-
-test_issues: $(SASSC_BIN)
-	$(RUBY_BIN) $(SASS_SPEC_PATH)/sass-spec.rb -c $(SASSC_BIN) $(LOG_FLAGS) $(SASS_SPEC_PATH)/spec/issues
+upload: check-version
+	scp $(DPKG_NAME)_$(VERSION)-$(RELEASE)_all.deb "$(REMOTE_USER)@$(REMOTE_HOST):$(REMOTE_DIR)/debs"	
+	ssh $(REMOTE_USER)@$(REMOTE_HOST) reprepro -b $(REMOTE_DIR) includedeb squeeze $(REMOTE_DIR)/debs/$(DPKG_NAME)_$(VERSION)-$(RELEASE)_all.deb
+	ssh $(REMOTE_USER)@$(REMOTE_HOST) reprepro -b $(REMOTE_DIR) includedeb wheezy $(REMOTE_DIR)/debs/$(DPKG_NAME)_$(VERSION)-$(RELEASE)_all.deb
 
 clean:
-	$(RM) $(COBJECTS) $(OBJECTS) lib/*.a lib/*.la lib/*.so
+	rm -f $(DPKG_NAME)*_all.deb v$(VERSION).tar.gz
 
+.PHONY: all 
 
-.PHONY: all debug debug-static debug-shared static shared install install-static install-shared clean
+check-version:
+ifndef VERSION
+    $(error VERSION is undefined. Usage make VERSION=x.x.x)
+endif
