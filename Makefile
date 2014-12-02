@@ -9,47 +9,47 @@ REMOTE_HOST=debian.qcode.co.uk
 REMOTE_DIR=debian.qcode.co.uk
 
 SOURCES = \
-	ast.cpp \
-	base64vlq.cpp \
-	bind.cpp \
-	constants.cpp \
-	context.cpp \
-	contextualize.cpp \
-	copy_c_str.cpp \
-	error_handling.cpp \
-	eval.cpp \
-	expand.cpp \
-	extend.cpp \
-	file.cpp \
-	functions.cpp \
-	inspect.cpp \
-	node.cpp \
-	json.cpp \
-	output_compressed.cpp \
-	output_nested.cpp \
-	parser.cpp \
-	prelexer.cpp \
-	remove_placeholders.cpp \
-	sass.cpp \
-	sass_util.cpp \
-	sass_values.cpp \
-	sass_context.cpp \
-	sass_functions.cpp \
-	sass_interface.cpp \
-	sass2scss.cpp \
-	source_map.cpp \
-	to_c.cpp \
-	to_string.cpp \
-	units.cpp \
-	utf8_string.cpp \
-	util.cpp
+	$(TMP_DIR)/ast.cpp \
+	$(TMP_DIR)/base64vlq.cpp \
+	$(TMP_DIR)/bind.cpp \
+	$(TMP_DIR)/constants.cpp \
+	$(TMP_DIR)/context.cpp \
+	$(TMP_DIR)/contextualize.cpp \
+	$(TMP_DIR)/copy_c_str.cpp \
+	$(TMP_DIR)/error_handling.cpp \
+	$(TMP_DIR)/eval.cpp \
+	$(TMP_DIR)/expand.cpp \
+	$(TMP_DIR)/extend.cpp \
+	$(TMP_DIR)/file.cpp \
+	$(TMP_DIR)/functions.cpp \
+	$(TMP_DIR)/inspect.cpp \
+	$(TMP_DIR)/node.cpp \
+	$(TMP_DIR)/json.cpp \
+	$(TMP_DIR)/output_compressed.cpp \
+	$(TMP_DIR)/output_nested.cpp \
+	$(TMP_DIR)/parser.cpp \
+	$(TMP_DIR)/prelexer.cpp \
+	$(TMP_DIR)/remove_placeholders.cpp \
+	$(TMP_DIR)/sass.cpp \
+	$(TMP_DIR)/sass_util.cpp \
+	$(TMP_DIR)/sass_values.cpp \
+	$(TMP_DIR)/sass_context.cpp \
+	$(TMP_DIR)/sass_functions.cpp \
+	$(TMP_DIR)/sass_interface.cpp \
+	$(TMP_DIR)/sass2scss.cpp \
+	$(TMP_DIR)/source_map.cpp \
+	$(TMP_DIR)/to_c.cpp \
+	$(TMP_DIR)/to_string.cpp \
+	$(TMP_DIR)/units.cpp \
+	$(TMP_DIR)/utf8_string.cpp \
+	$(TMP_DIR)/util.cpp
 
-CSOURCES = cencode.c
+CSOURCES = $(TMP_DIR)/cencode.c
 
 OBJECTS = $(SOURCES:.cpp=.o)
 COBJECTS = $(CSOURCES:.c=.o)
 
-all: package
+all: package upload clean
 
 %.o: %.c
 	cd $(TMP_DIR) && g++ -Wall -fPIC -O2 -c -o $@ $<
@@ -62,6 +62,7 @@ all: package
 
 build: $(COBJECTS) $(OBJECTS)
 	cd $(TMP_DIR) && mkdir -p lib
+	cd $(TMP_DIR) && pwd
 	cd $(TMP_DIR) && g++ -shared -fPIC -o lib/libsass.so $(COBJECTS) $(OBJECTS)
 
 package: check-version
