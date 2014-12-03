@@ -52,7 +52,7 @@ COBJECTS = $(CSOURCES:.c=.o)
 all: package upload clean
 
 %.o: %.c
-	g++ -Wall -fPIC -O2 -c -o $@ $<
+	cc -Wall -fPIC -O2 -c -o $@ $<
 
 %.o: %.cpp
 	g++ -std=c++0x -Wall -fPIC -O2 -c -o $@ $<
