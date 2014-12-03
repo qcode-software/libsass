@@ -52,18 +52,17 @@ COBJECTS = $(CSOURCES:.c=.o)
 all: package upload clean
 
 %.o: %.c
-	cd $(TMP_DIR) && g++ -Wall -fPIC -O2 -c -o $@ $<
+	cc -Wall -fPIC -O2 -c -o $@ $<
 
 %.o: %.cpp
-	cd $(TMP_DIR) && g++ -std=c++0x -Wall -fPIC -O2 -c -o $@ $<
+	g++ -std=c++0x -Wall -fPIC -O2 -c -o $@ $<
 
 %: %.o 
-	cd $(TMP_DIR) && g++ -std=c++0x -Wall -fPIC -O2 -o $@ $+ -fPIC
+	g++ -std=c++0x -Wall -fPIC -O2 -o $@ $+ -fPIC
 
-build: $(COBJECTS) $(OBJECTS)
-	cd $(TMP_DIR) && mkdir -p lib
-	cd $(TMP_DIR) && pwd
-	cd $(TMP_DIR) && g++ -shared -fPIC -o lib/libsass.so $(COBJECTS) $(OBJECTS)
+$(TMP_DIR)/lib/libsass.so: $(COBJECTS) $(OBJECTS)
+	mkdir -p cd $(TMP_DIR)/lib
+	g++ -shared -fPIC -o $(TMP_DIR)/lib/libsass.so $(COBJECTS) $(OBJECTS)
 
 package: check-version
 	# Copy files to pristine temporary directory
@@ -74,8 +73,8 @@ package: check-version
 
 	fakeroot checkinstall -D --deldoc --backup=no --install=no --pkgname=$(DPKG_NAME) --pkgversion=$(VERSION) --pkgrelease=$(RELEASE) --pkglicense="PUBLIC" -A all -y --maintainer $(MAINTAINER) --reset-uids=yes --replaces none --conflicts none make install
 
-install: build
-	cd $(TMP_DIR) && install -pm0755 lib/libsass.so /usr/local/lib/libsass.so
+install: $(TMP_DIR)/lib/libsass.so
+	install -pm0755 $(TMP_DIR)/lib/libsass.so /usr/local/lib/libsass.so
 
 upload: check-version
 	scp $(DPKG_NAME)_$(VERSION)-$(RELEASE)_all.deb "$(REMOTE_USER)@$(REMOTE_HOST):$(REMOTE_DIR)/debs"	
